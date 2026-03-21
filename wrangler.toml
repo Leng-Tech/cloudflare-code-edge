@@ -1,0 +1,27 @@
+name = "cloudflare-code-edge"
+main = "src/index.ts"
+compatibility_date = "2026-03-21"
+
+[observability]
+enabled = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "cloudflare-code-edge-db"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+[[queues.producers]]
+binding = "TASK_QUEUE"
+queue = "cloudflare-code-edge-tasks"
+
+[[queues.consumers]]
+queue = "cloudflare-code-edge-tasks"
+max_batch_size = 10
+max_batch_timeout = 5
+
+[ai]
+binding = "AI"
+
+[vars]
+GITHUB_REPO = "owner/repo"
+

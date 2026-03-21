@@ -1,0 +1,19 @@
+{
+  "name": "cloudflare-code-edge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cloudflare Worker for turning Linear issues into Go PRs.",
+  "type": "module",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "check": "tsc --noEmit",
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev",
+    "cf-typegen": "wrangler types"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "latest",
+    "typescript": "^5.8.2",
+    "wrangler": "latest"
+  }
+}
