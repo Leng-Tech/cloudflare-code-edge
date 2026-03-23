@@ -25,11 +25,13 @@ function json(data: unknown, init?: ResponseInit): Response {
 function buildHealthcheck(env: Cloudflare.Env) {
   const missingConfigKeys = getMissingConfigKeys(env);
   let repo: string | null = null;
+  let baseBranch: string | null = null;
   let configError: string | null = null;
 
   try {
     const config = loadConfig(env);
-    repo = config.githubRepo;
+    repo = config.githubRepo.fullName;
+    baseBranch = config.githubBaseBranch;
   } catch (error) {
     configError =
       error instanceof Error ? error.message : "Unknown configuration error";
@@ -39,6 +41,7 @@ function buildHealthcheck(env: Cloudflare.Env) {
     ok: true,
     service: "cloudflare-code-edge",
     repo,
+    baseBranch,
     configError,
     missingConfigKeys,
     bindings: {
@@ -127,7 +130,7 @@ async function handleLinearWebhook(
     issueId: payload.data.id,
     title: payload.data.title,
     description: payload.data.description ?? null,
-    repoFullName: githubRepo,
+    repoFullName: githubRepo.fullName,
     createdAt,
     eventType: "task.queued",
     eventPayload: JSON.stringify({

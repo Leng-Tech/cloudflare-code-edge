@@ -1,6 +1,6 @@
 # cloudflare-code-edge
 
-Phase 2 webhook intake for a TypeScript Cloudflare Worker that ingests Linear issues and eventually opens Go PRs on GitHub.
+Phase 3 foundation for a TypeScript Cloudflare Worker that ingests Linear issues and uses GitHub as the v1 source of truth for reading and writing Go repositories.
 
 ## Included so far
 
@@ -13,6 +13,9 @@ Phase 2 webhook intake for a TypeScript Cloudflare Worker that ingests Linear is
 - `ai-ready` label gating for accepted Linear issues
 - D1 task and task-event persistence for queued work
 - Queue publishing for accepted work items
+- GitHub repo parsing with `develop` as the default base branch
+- `@octokit/request`-backed GitHub primitives for tree listing, file reads, branch creation, commits, and PR opening
+- Bounded repo-context discovery for relevant Go files without requiring a full repository sync
 
 ## Local setup
 
@@ -112,3 +115,4 @@ Notes:
 - Do not use `.env` for this repo's local workflow.
 - If both `.dev.vars` and `.env` exist, Wrangler ignores `.env` during local development.
 - Named Wrangler environments do not inherit bindings like D1, Queues, AI, or `vars`, so each named environment must declare them explicitly.
+- R2 is not part of the v1 critical path. Repository context is read directly from GitHub.

@@ -40,6 +40,12 @@ export interface LinearLabel {
   color?: string;
 }
 
+export interface GitHubRepoTarget {
+  owner: string;
+  repo: string;
+  fullName: string;
+}
+
 export interface QueuedTaskPersistenceInput {
   taskId: string;
   issueId: string;
@@ -119,4 +125,96 @@ export interface ValidationSummary {
   status: "passed" | "failed" | "limited";
   checks: ValidationCheck[];
   notes?: string;
+}
+
+export interface GitHubTreeEntry {
+  path: string;
+  mode?: string;
+  sha: string;
+  size?: number;
+  type: "blob" | "tree" | "commit";
+  url?: string;
+}
+
+export interface GitHubListFilesResult {
+  ref: string;
+  sha: string;
+  truncated: boolean;
+  files: GitHubTreeEntry[];
+}
+
+export interface GitHubFileContent {
+  path: string;
+  ref: string;
+  sha: string;
+  size: number;
+  content: string;
+  encoding: "utf-8";
+}
+
+export interface GitHubFileContentOptions {
+  maxBytes?: number;
+}
+
+export interface GitHubBranchResult {
+  name: string;
+  ref: string;
+  sha: string;
+  baseRef: string;
+}
+
+export interface GitHubCommitFileChange {
+  path: string;
+  operation: "create" | "update" | "delete";
+  content?: string;
+  mode?: string;
+}
+
+export interface GitHubCommitResult {
+  branch: string;
+  commitSha: string;
+  treeSha: string;
+  url: string;
+}
+
+export interface GitHubPullRequestInput {
+  title: string;
+  body?: string;
+  head: string;
+  base?: string;
+}
+
+export interface GitHubPullRequestResult {
+  number: number;
+  url: string;
+  htmlUrl: string;
+  headRef: string;
+  baseRef: string;
+}
+
+export interface RepoContextQuery {
+  title: string;
+  description?: string | null;
+}
+
+export interface RepoContextCandidate {
+  path: string;
+  reason: string;
+  score: number;
+  size?: number;
+}
+
+export interface RepoContextDocument {
+  path: string;
+  content: string;
+  score: number;
+  size: number;
+  sha: string;
+}
+
+export interface RepoContextResult {
+  ref: string;
+  candidates: RepoContextCandidate[];
+  files: RepoContextDocument[];
+  totalBytes: number;
 }

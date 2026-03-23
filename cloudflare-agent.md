@@ -1,5 +1,7 @@
 # Headless AI Agent for Linear - Implementation Plan
 
+Note: the current v1 path no longer uses R2 for repository reads. Repository context now comes directly from GitHub via `@octokit/request`, and R2 is out of the critical path.
+
 A Cloudflare Edge-deployed AI agent that receives Linear webhooks, analyzes tasks, plans implementation against the codebase, and autonomously creates GitHub PRs when requirements are clear.
 
 ---

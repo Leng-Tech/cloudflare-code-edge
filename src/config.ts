@@ -1,14 +1,19 @@
+import type { GitHubRepoTarget } from "./types.js";
+
 export interface AppConfig {
-  githubRepo: string;
+  githubRepo: GitHubRepoTarget;
+  githubBaseBranch: string;
   githubToken: string;
   linearApiKey: string;
   linearWebhookSecret: string;
 }
 
 export interface WebhookIntakeConfig {
-  githubRepo: string;
+  githubRepo: GitHubRepoTarget;
   linearWebhookSecret: string;
 }
+
+export const DEFAULT_GITHUB_BASE_BRANCH = "develop";
 
 function isMissingConfigValue(value: string | undefined): boolean {
   return !value || value.startsWith("replace-with-") || value === "owner/repo";
@@ -20,6 +25,27 @@ function requireString(value: string | undefined, name: string): string {
   }
 
   return value as string;
+}
+
+export function parseGitHubRepo(value: string): GitHubRepoTarget {
+  const normalized = value.trim();
+  const segments = normalized.split("/");
+
+  if (
+    segments.length !== 2 ||
+    segments.some((segment) => segment.length === 0) ||
+    normalized.endsWith(".git")
+  ) {
+    throw new Error(
+      "Invalid GITHUB_REPO. Expected the format owner/repo with no .git suffix.",
+    );
+  }
+
+  return {
+    owner: segments[0] as string,
+    repo: segments[1] as string,
+    fullName: normalized,
+  };
 }
 
 export function getMissingConfigKeys(env: Cloudflare.Env): string[] {
@@ -45,7 +71,10 @@ export function loadConfig(env: Cloudflare.Env): AppConfig {
   }
 
   return {
-    githubRepo: requireString(env.GITHUB_REPO, "GITHUB_REPO"),
+    githubRepo: parseGitHubRepo(
+      requireString(env.GITHUB_REPO, "GITHUB_REPO"),
+    ),
+    githubBaseBranch: DEFAULT_GITHUB_BASE_BRANCH,
     githubToken: requireString(env.GITHUB_TOKEN, "GITHUB_TOKEN"),
     linearApiKey: requireString(env.LINEAR_API_KEY, "LINEAR_API_KEY"),
     linearWebhookSecret: requireString(
@@ -59,7 +88,9 @@ export function loadWebhookIntakeConfig(
   env: Cloudflare.Env,
 ): WebhookIntakeConfig {
   return {
-    githubRepo: requireString(env.GITHUB_REPO, "GITHUB_REPO"),
+    githubRepo: parseGitHubRepo(
+      requireString(env.GITHUB_REPO, "GITHUB_REPO"),
+    ),
     linearWebhookSecret: requireString(
       env.LINEAR_WEBHOOK_SECRET,
       "LINEAR_WEBHOOK_SECRET",
