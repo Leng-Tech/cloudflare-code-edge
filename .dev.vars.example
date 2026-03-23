@@ -1,4 +1,4 @@
 LINEAR_WEBHOOK_SECRET=replace-with-linear-webhook-secret
 LINEAR_API_KEY=replace-with-linear-api-key
 GITHUB_TOKEN=replace-with-github-token
-GITHUB_REPO=owner/repo
+GITHUB_REPO=replace-with-owner/repo

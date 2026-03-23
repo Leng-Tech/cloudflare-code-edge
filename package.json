@@ -5,11 +5,13 @@
   "description": "Cloudflare Worker for turning Linear issues into Go PRs.",
   "type": "module",
   "scripts": {
-    "build": "tsc --noEmit",
+    "build": "tsc",
     "check": "tsc --noEmit",
-    "deploy": "wrangler deploy",
+    "deploy": "npm run build && wrangler deploy",
     "dev": "wrangler dev",
-    "cf-typegen": "wrangler types"
+    "cf-typegen": "wrangler types",
+    "test:build": "tsc -p tsconfig.test.json",
+    "test": "npm run test:build && node --test test/**/*.test.mjs"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "latest",

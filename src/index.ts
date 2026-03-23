@@ -1,5 +1,17 @@
-import { loadConfig } from "./config";
-import type { TaskRecord } from "./types";
+import {
+  getMissingConfigKeys,
+  loadConfig,
+  loadWebhookIntakeConfig,
+} from "./config.js";
+import {
+  getLinearLabels,
+  isAiReadyIssue,
+  isLinearIssuePayload,
+  LINEAR_SIGNATURE_HEADER,
+  verifyLinearWebhookSignature,
+} from "./linear/webhook.js";
+import { persistQueuedTask } from "./storage/d1.js";
+import type { TaskRecord } from "./types.js";
 
 function json(data: unknown, init?: ResponseInit): Response {
   return new Response(JSON.stringify(data, null, 2), {
@@ -11,6 +23,7 @@ function json(data: unknown, init?: ResponseInit): Response {
 }
 
 function buildHealthcheck(env: Cloudflare.Env) {
+  const missingConfigKeys = getMissingConfigKeys(env);
   let repo: string | null = null;
   let configError: string | null = null;
 
@@ -27,12 +40,17 @@ function buildHealthcheck(env: Cloudflare.Env) {
     service: "cloudflare-code-edge",
     repo,
     configError,
+    missingConfigKeys,
     bindings: {
       ai: Boolean(env.AI),
       db: Boolean(env.DB),
       taskQueue: Boolean(env.TASK_QUEUE),
     },
   };
+}
+
+function badRequest(message: string, status = 400): Response {
+  return json({ error: message }, { status });
 }
 
 async function listTasks(env: Cloudflare.Env): Promise<TaskRecord[]> {
@@ -45,6 +63,92 @@ async function listTasks(env: Cloudflare.Env): Promise<TaskRecord[]> {
 
   const result = await statement.all<TaskRecord>();
   return result.results ?? [];
+}
+
+async function handleLinearWebhook(
+  request: Request,
+  env: Cloudflare.Env,
+): Promise<Response> {
+  const { githubRepo, linearWebhookSecret } = loadWebhookIntakeConfig(env);
+  const rawBody = await request.text();
+
+  let parsedBody: unknown;
+
+  try {
+    parsedBody = JSON.parse(rawBody);
+  } catch {
+    return badRequest("Invalid JSON payload.");
+  }
+
+  const payload = isLinearIssuePayload(parsedBody) ? parsedBody : null;
+  const isValidSignature = await verifyLinearWebhookSignature(
+    rawBody,
+    request.headers.get(LINEAR_SIGNATURE_HEADER),
+    linearWebhookSecret,
+    {
+      webhookTimestamp: payload?.webhookTimestamp,
+    },
+  );
+
+  if (!isValidSignature) {
+    return badRequest("Invalid or expired Linear webhook signature.", 401);
+  }
+
+  if (!payload) {
+    return json({
+      accepted: false,
+      ignored: true,
+      reason: "unsupported_payload",
+    });
+  }
+
+  if (!isAiReadyIssue(payload)) {
+    return json({
+      accepted: false,
+      ignored: true,
+      reason: "missing_ai_ready_label",
+      issueId: payload.data.id,
+      labels: getLinearLabels(payload).map((label) => label.name),
+    });
+  }
+
+  const nowMs = Date.now();
+  const createdAt = Math.floor(nowMs / 1000);
+  const queuedAt = new Date(nowMs).toISOString();
+  const taskId = payload.data.id;
+  const queueMessage: TaskQueueMessage = {
+    taskId,
+    issueId: payload.data.id,
+    queuedAt,
+  };
+
+  await persistQueuedTask(env.DB, {
+    taskId,
+    issueId: payload.data.id,
+    title: payload.data.title,
+    description: payload.data.description ?? null,
+    repoFullName: githubRepo,
+    createdAt,
+    eventType: "task.queued",
+    eventPayload: JSON.stringify({
+      action: payload.action,
+      labels: getLinearLabels(payload).map((label) => label.name),
+      queuedAt,
+      organizationId: payload.organization?.id ?? null,
+      issueIdentifier: payload.data.identifier ?? null,
+    }),
+  });
+
+  await env.TASK_QUEUE.send(queueMessage);
+
+  return json({
+    accepted: true,
+    queued: true,
+    taskId,
+    issueId: payload.data.id,
+    issueIdentifier: payload.data.identifier ?? null,
+    queueMessage,
+  });
 }
 
 export default {
@@ -61,14 +165,7 @@ export default {
     }
 
     if (request.method === "POST" && url.pathname === "/webhook/linear") {
-      return json(
-        {
-          accepted: false,
-          phase: "foundation",
-          message: "Linear webhook handling will be implemented in Phase 2.",
-        },
-        { status: 501 },
-      );
+      return handleLinearWebhook(request, env);
     }
 
     return json(

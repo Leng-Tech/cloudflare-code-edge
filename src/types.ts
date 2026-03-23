@@ -1,26 +1,32 @@
+export interface LinearIssuePayload {
+  id: string;
+  identifier?: string;
+  title: string;
+  description?: string | null;
+  priority?: number | null;
+  state?: {
+    id: string;
+    name: string;
+  } | null;
+  labels?:
+    | {
+        nodes?: unknown;
+      }
+    | unknown[]
+    | null;
+  team?: {
+    id: string;
+    key: string;
+    name: string;
+  } | null;
+}
+
 export interface LinearWebhookPayload {
   action: string;
   type?: string;
   createdAt?: string;
-  data: {
-    id: string;
-    identifier?: string;
-    title: string;
-    description?: string | null;
-    priority?: number | null;
-    state?: {
-      id: string;
-      name: string;
-    } | null;
-    labels?: {
-      nodes: LinearLabel[];
-    } | null;
-    team?: {
-      id: string;
-      key: string;
-      name: string;
-    } | null;
-  };
+  webhookTimestamp?: number;
+  data: LinearIssuePayload;
   organization?: {
     id: string;
     name?: string;
@@ -32,6 +38,17 @@ export interface LinearLabel {
   id: string;
   name: string;
   color?: string;
+}
+
+export interface QueuedTaskPersistenceInput {
+  taskId: string;
+  issueId: string;
+  title: string;
+  description?: string | null;
+  repoFullName: string;
+  createdAt: number;
+  eventType: string;
+  eventPayload: string;
 }
 
 export type TaskStatus =

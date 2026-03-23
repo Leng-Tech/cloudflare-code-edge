@@ -1,5 +1,5 @@
 name = "cloudflare-code-edge"
-main = "src/index.ts"
+main = "dist/index.js"
 compatibility_date = "2026-03-21"
 
 [observability]
@@ -8,7 +8,7 @@ enabled = true
 [[d1_databases]]
 binding = "DB"
 database_name = "cloudflare-code-edge-db"
-database_id = "REPLACE_WITH_D1_DATABASE_ID"
+database_id = "f02b4fec-0a61-4d5a-8da4-7653bc1da6d5"
 
 [[queues.producers]]
 binding = "TASK_QUEUE"
@@ -22,6 +22,42 @@ max_batch_timeout = 5
 [ai]
 binding = "AI"
 
-[vars]
-GITHUB_REPO = "owner/repo"
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "cloudflare-code-edge-db"
+database_id = "f02b4fec-0a61-4d5a-8da4-7653bc1da6d5"
 
+[[env.staging.queues.producers]]
+binding = "TASK_QUEUE"
+queue = "cloudflare-code-edge-tasks"
+
+[[env.staging.queues.consumers]]
+queue = "cloudflare-code-edge-tasks"
+max_batch_size = 10
+max_batch_timeout = 5
+
+[env.staging.ai]
+binding = "AI"
+
+[env.staging.vars]
+GITHUB_REPO = "Leng-Tech/cloudflare-code-edge"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "cloudflare-code-edge-db"
+database_id = "f02b4fec-0a61-4d5a-8da4-7653bc1da6d5"
+
+[[env.production.queues.producers]]
+binding = "TASK_QUEUE"
+queue = "cloudflare-code-edge-tasks"
+
+[[env.production.queues.consumers]]
+queue = "cloudflare-code-edge-tasks"
+max_batch_size = 10
+max_batch_timeout = 5
+
+[env.production.ai]
+binding = "AI"
+
+[env.production.vars]
+GITHUB_REPO = "Leng-Tech/cloudflare-code-edge"
